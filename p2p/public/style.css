@@ -1,0 +1,448 @@
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+    color: white;
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container {
+    max-width: 1200px;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    margin-top: 20px;
+}
+
+/* Header styles */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h1 {
+    font-size: 2.8rem;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Main content layout */
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+.transfer-ui, .path-visualization {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 25px;
+}
+
+.section-title {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    color: #3498db;
+    display: flex;
+    align-items: center;
+}
+
+.section-title i {
+    margin-right: 10px;
+}
+
+/* File input area */
+.file-input-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+    padding: 20px;
+    border: 2px dashed #3498db;
+    border-radius: 8px;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.file-input-container:hover {
+    border-color: #2ecc71;
+    background: rgba(52, 152, 219, 0.1);
+}
+
+.file-input-container i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.file-input-container h3 {
+    margin-bottom: 5px;
+}
+
+.file-input-container p {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+#fileInput {
+    display: none;
+}
+
+/* File list */
+.file-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.file-item {
+    padding: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+}
+
+.file-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+.file-size {
+    color: #bdc3c7;
+    font-size: 0.9rem;
+}
+
+/* Buttons */
+.button-group {
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 12px 25px;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.primary-button {
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    color: white;
+}
+
+.secondary-button {
+    background: linear-gradient(to right, #a1c4fd, #c2e9fb);
+    color: #2c3e50;
+}
+
+button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Status indicator */
+.status-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.status-disconnected {
+    background-color: #ff5252;
+    box-shadow: 0 0 10px #ff5252;
+}
+
+.status-connecting {
+    background-color: #ffb74d;
+    box-shadow: 0 0 10px #ffb74d;
+}
+
+.status-connected {
+    background-color: #2ecc71;
+    box-shadow: 0 0 10px #2ecc71;
+}
+
+/* Progress bar */
+.progress-container {
+    margin: 20px 0;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+progress {
+    width: 100%;
+    height: 25px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+progress::-webkit-progress-bar {
+    background-color: #2c3e50;
+    border-radius: 12px;
+}
+
+progress::-webkit-progress-value {
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    border-radius: 12px;
+}
+
+.local-progress::-webkit-progress-value {
+    background: linear-gradient(to right, #2ecc71, #00d2a0);
+}
+
+#transferSpeed {
+    text-align: center;
+    margin-top: 5px;
+    font-size: 0.9rem;
+    color: #bdc3c7;
+}
+
+/* Connection info */
+.connection-info {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+}
+
+/* Path visualization */
+#transferPath {
+    height: 300px;
+    position: relative;
+    margin: 20px 0;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+}
+
+.network-node {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10px;
+    font-weight: bold;
+    z-index: 2;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.node-sender {
+    background: linear-gradient(to bottom right, #4facfe, #00f2fe);
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.node-receiver {
+    background: linear-gradient(to bottom right, #a1c4fd, #c2e9fb);
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.node-cloud {
+    background: linear-gradient(to bottom right, #2c3e50, #4a6491);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+}
+
+.network-node i {
+    font-size: 2rem;
+    margin-bottom: 5px;
+}
+
+.connection {
+    position: absolute;
+    height: 6px;
+    background: #3498db;
+    transform-origin: left center;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
+    z-index: 1;
+}
+
+.connection.local {
+    background: #2ecc71;
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.7);
+}
+
+.data-flow {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #e74c3c;
+    box-shadow: 0 0 15px rgba(231, 76, 60, 0.8);
+    z-index: 3;
+}
+
+.data-flow.local {
+    background: #2ecc71;
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.8);
+}
+
+/* Path info */
+.path-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.path-type {
+    font-size: 1.4rem;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.local-path {
+    color: #2ecc71;
+}
+
+.cloud-path {
+    color: #3498db;
+}
+
+.path-info p {
+    line-height: 1.6;
+    text-align: center;
+}
+
+/* Transfer logs */
+.transfer-logs {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.log-entry {
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.log-local {
+    color: #2ecc71;
+}
+
+.log-cloud {
+    color: #3498db;
+}
+
+.log-warning {
+    color: #f39c12;
+}
+
+.log-error {
+    color: #e74c3c;
+}
+
+/* Download container */
+#downloadContainer {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.download-link {
+    display: block;
+    padding: 10px 15px;
+    background: #2ecc71;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.download-link:hover {
+    background: #27ae60;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.download-link i {
+    margin-right: 8px;
+}

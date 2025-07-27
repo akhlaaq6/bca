@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DropShare | P2P File Transfer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.0/dist/simplepeer.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --dark: #1e1e2e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--gray);
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .panel {
+            margin-bottom: 25px;
+        }
+        
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: var(--secondary);
+            font-size: 1.3rem;
+        }
+        
+        .panel-title i {
+            font-size: 1.4rem;
+        }
+        
+        .devices-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .device-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 2px solid transparent;
+        }
+        
+        .device-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+        
+        .device-card.selected {
+            border-color: var(--primary);
+            background: rgba(67, 97, 238, 0.05);
+        }
+        
+        .device-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            background: rgba(67, 97, 238, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 24px;
+        }
+        
+        .device-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+        
+        .device-id {
+            font-size: 0.8rem;
+            color: var(--gray);
+            word-break: break-all;
+        }
+        
+        .file-drop-area {
+            border: 3px dashed rgba(67, 97, 238, 0.3);
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 25px;
+        }
+        
+        .file-drop-area:hover, .file-drop-area.drag-over {
+            background: rgba(67, 97, 238, 0.05);
+            border-color: var(--primary);
+        }
+        
+        .file-drop-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .selected-files {
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(67, 97, 238, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .file-info {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 3px;
+        }
+        
+        .file-size {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 28px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+        
+        .transfer-progress {
+            margin: 25px 0;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        progress {
+            width: 100%;
+            height: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        progress::-webkit-progress-bar {
+            background: rgba(67, 97, 238, 0.1);
+            border-radius: 10px;
+        }
+        
+        progress::-webkit-progress-value {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+        
+        .downloads-container {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .download-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .download-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(76, 201, 240, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--success);
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .download-btn {
+            margin-left: auto;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .download-btn:hover {
+            background: #38b6e0;
+            transform: translateY(-2px);
+        }
+        
+        .status-bar {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 15px;
+            margin-top: 25px;
+            font-size: 0.9rem;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-connected {
+            background: #4cc9f0;
+        }
+        
+        .status-disconnected {
+            background: #e76f51;
+        }
+        
+        .status-connecting {
+            background: #f4a261;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+        
+        .logs-container {
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .log-success {
+            color: #2a9d8f;
+        }
+        
+        .log-warning {
+            color: #e9c46a;
+        }
+        
+        .log-error {
+            color: #e76f51;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: rgba(67, 97, 238, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <header>
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                    <h1>DropShare</h1>
+                </div>
+                <p class="subtitle">Send files directly between devices on the same network with end-to-end encryption</p>
+            </header>
+            
+            <div class="panel">
+                <h2 class="panel-title">
+                    <i class="fas fa-network-wired"></i>
+                    Available Devices
+                </h2>
+                <div class="devices-container" id="devicesContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>Searching for devices...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2 class="panel-title">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Select Files
+                </h2>
+                <div class="file-drop-area" id="dropArea">
+                    <div class="file-drop-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h3>Drag & Drop files here</h3>
+                    <p>or click to browse</p>
+                    <input type="file" class="file-input" id="fileInput" multiple>
+                </div>
+                
+                <div class="selected-files" id="selectedFiles"></div>
+                
+                <button class="btn" id="sendBtn" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                    Send Files
+                </button>
+            </div>
+            
+            <div class="transfer-progress" id="progressContainer" style="display: none;">
+                <div class="progress-header">
+                    <span>Transfer Progress</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <progress id="progressBar" value="0" max="100"></progress>
+                <div id="transferSpeed" style="text-align: center; margin-top: 10px;"></div>
+            </div>
+            
+            <div class="status-bar">
+                <span class="status-indicator status-connecting" id="statusIndicator"></span>
+                <span id="statusText">Connecting to network...</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="panel">
+                <h2 class="panel-title">
+                    <i class="fas fa-download"></i>
+                    Received Files
+                </h2>
+                <div class="downloads-container" id="downloadsContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>Files you receive will appear here</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2 class="panel-title">
+                    <i class="fas fa-terminal"></i>
+                    Transfer Logs
+                </h2>
+                <div class="logs-container" id="logsContainer">
+                    <div class="log-entry">[12:30:45] Application initialized</div>
+                    <div class="log-entry">[12:30:46] Connecting to signaling server...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application state
+        const state = {
+            socket: null,
+            peer: null,
+            localPeerId: '',
+            selectedDevice: null,
+            fileQueue: [],
+            receivedFiles: [],
+            transferStart: 0,
+            lastUpdate: 0,
+            lastBytes: 0
+        };
+
+        // DOM elements
+        const elements = {
+            devicesContainer: document.getElementById('devicesContainer'),
+            dropArea: document.getElementById('dropArea'),
+            fileInput: document.getElementById('fileInput'),
+            selectedFiles: document.getElementById('selectedFiles'),
+            sendBtn: document.getElementById('sendBtn'),
+            progressContainer: document.getElementById('progressContainer'),
+            progressBar: document.getElementById('progressBar'),
+            progressPercent: document.getElementById('progressPercent'),
+            transferSpeed: document.getElementById('transferSpeed'),
+            statusIndicator: document.getElementById('statusIndicator'),
+            statusText: document.getElementById('statusText'),
+            downloadsContainer: document.getElementById('downloadsContainer'),
+            logsContainer: document.getElementById('logsContainer')
+        };
+
+        // Initialize application
+        function init() {
+            setupEventListeners();
+            connectToSignaling();
+            logMessage('Application initialized');
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // File selection
+            elements.dropArea.addEventListener('click', () => elements.fileInput.click());
+            elements.fileInput.addEventListener('change', handleFileSelect);
+            
+            // Drag and drop
+            elements.dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                elements.dropArea.classList.add('drag-over');
+            });
+            
+            elements.dropArea.addEventListener('dragleave', () => {
+                elements.dropArea.classList.remove('drag-over');
+            });
+            
+            elements.dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                elements.dropArea.classList.remove('drag-over');
+                if (e.dataTransfer.files.length > 0) {
+                    elements.fileInput.files = e.dataTransfer.files;
+                    handleFileSelect();
+                }
+            });
+            
+            // Send button
+            elements.sendBtn.addEventListener('click', startTransfer);
+        }
+
+        // Connect to signaling server
+        function connectToSignaling() {
+            updateStatus('Connecting to network...', 'connecting');
+            
+            // Get current hostname and port
+            const host = window.location.hostname;
+            const port = window.location.port || (window.location.protocol === 'https:' ? 443 : 80);
+            
+            // Connect to WebSocket server
+            state.socket = io(`${window.location.protocol}//${host}:${port}`, {
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 3000
+            });
+            
+            state.socket.on('connect', () => {
+                state.localPeerId = state.socket.id;
+                updateStatus('Connected to network', 'connected');
+                logMessage('Connected to signaling server');
+                
+                // Update device list with self
+                updateDeviceList([{ id: state.socket.id, name: 'This Device' }]);
+            });
+            
+            state.socket.on('disconnect', () => {
+                updateStatus('Disconnected from network', 'disconnected');
+                logMessage('Disconnected from signaling server', 'warning');
+            });
+            
+            state.socket.on('connect_error', (err) => {
+                updateStatus('Connection error', 'disconnected');
+                logMessage(`Connection error: ${err.message}`, 'error');
+            });
+            
+            state.socket.on('devices', (devices) => {
+                // Filter out current device
+                const otherDevices = devices.filter(device => device.id !== state.localPeerId);
+                updateDeviceList(otherDevices);
+            });
+            
+            state.socket.on('offer', (offer, fromId) => {
+                handleOffer(offer, fromId);
+            });
+            
+            state.socket.on('answer', (answer) => {
+                if (state.peer) {
+                    state.peer.signal(answer);
+                    logMessage('Received answer from peer');
+                }
+            });
+            
+            state.socket.on('ice-candidate', (candidate) => {
+                if (state.peer) {
+                    state.peer.signal(candidate);
+                }
+            });
+        }
+
+        // Handle file selection
+        function handleFileSelect() {
+            const files = elements.fileInput.files;
+            elements.selectedFiles.innerHTML = '';
+            state.fileQueue = [];
+            
+            if (files.length === 0) return;
+            
+            state.fileQueue = Array.from(files);
+            
+            // Display selected files
+            state.fileQueue.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-icon">
+                        <i class="fas fa-file"></i>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                    </div>
+                `;
+                elements.selectedFiles.appendChild(fileItem);
+            });
+            
+            // Enable send button if device is selected
+            elements.sendBtn.disabled = !state.selectedDevice;
+            logMessage(`Selected ${files.length} file(s) for transfer`);
+        }
+
+        // Update device list
+        function updateDeviceList(devices) {
+            if (devices.length === 0) {
+                elements.devicesContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>No other devices found</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            elements.devicesContainer.innerHTML = '';
+            
+            devices.forEach(device => {
+                const deviceCard = document.createElement('div');
+                deviceCard.className = 'device-card';
+                if (state.selectedDevice && state.selectedDevice.id === device.id) {
+                    deviceCard.classList.add('selected');
+                }
+                
+                deviceCard.innerHTML = `
+                    <div class="device-icon">
+                        <i class="fas fa-${device.id === state.localPeerId ? 'desktop' : 'mobile-alt'}"></i>
+                    </div>
+                    <div class="device-name">${device.name}</div>
+                    <div class="device-id">${device.id.substring(0, 8)}</div>
+                `;
+                
+                deviceCard.addEventListener('click', () => {
+                    // Remove selection from all devices
+                    document.querySelectorAll('.device-card').forEach(card => {
+                        card.classList.remove('selected');
+                    });
+                    
+                    // Select this device
+                    deviceCard.classList.add('selected');
+                    state.selectedDevice = device;
+                    
+                    // Enable send button if files are selected
+                    elements.sendBtn.disabled = state.fileQueue.length === 0;
+                    
+                    logMessage(`Selected device: ${device.name}`);
+                });
+                
+                elements.devicesContainer.appendChild(deviceCard);
+            });
+        }
+
+        // Start file transfer
+        function startTransfer() {
+            if (!state.selectedDevice || state.fileQueue.length === 0) return;
+            
+            logMessage('Initiating transfer...');
+            
+            // Create peer connection
+            state.peer = new SimplePeer({
+                initiator: true,
+                trickle: true,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                }
+            });
+            
+            setupPeerEvents();
+            
+            // When peer generates offer, send it to the other device
+            state.peer.on('signal', (data) => {
+                if (data.type === 'offer') {
+                    state.socket.emit('offer', data, state.selectedDevice.id);
+                    logMessage('Sent connection offer');
+                } else if (data.candidate) {
+                    state.socket.emit('ice-candidate', data, state.selectedDevice.id);
+                }
+            });
+        }
+
+        // Handle incoming offer
+        function handleOffer(offer, fromId) {
+            logMessage(`Received connection offer from ${fromId.substring(0, 8)}`);
+            
+            // Create peer connection
+            state.peer = new SimplePeer({
+                initiator: false,
+                trickle: true,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' }
+                    ]
+                }
+            });
+            
+            setupPeerEvents();
+            
+            // Signal the offer to the peer
+            state.peer.signal(offer);
+            
+            // When peer generates answer, send it back
+            state.peer.on('signal', (data) => {
+                if (data.type === 'answer') {
+                    state.socket.emit('answer', data, fromId);
+                    logMessage('Sent connection answer');
+                } else if (data.candidate) {
+                    state.socket.emit('ice-candidate', data, fromId);
+                }
+            });
+        }
+
+        // Set up peer event handlers
+        function setupPeerEvents() {
+            state.peer.on('connect', () => {
+                logMessage('Peer connection established!', 'success');
+                if (state.peer.initiator) {
+                    startFileTransfer();
+                }
+            });
+            
+            state.peer.on('data', (data) => {
+                handleIncomingData(data);
+            });
+            
+            state.peer.on('close', () => {
+                logMessage('Peer connection closed');
+                resetTransfer();
+            });
+            
+            state.peer.on('error', (err) => {
+                logMessage(`Peer error: ${err.message}`, 'error');
+                resetTransfer();
+            });
+        }
+
+        // Start sending files
+        function startFileTransfer() {
+            state.transferStart = Date.now();
+            state.lastUpdate = state.transferStart;
+            state.lastBytes = 0;
+            elements.progressContainer.style.display = 'block';
+            
+            // Calculate total size
+            const totalSize = state.fileQueue.reduce((sum, file) => sum + file.size, 0);
+            
+            // Send metadata
+            state.peer.send(JSON.stringify({
+                type: 'metadata',
+                fileCount: state.fileQueue.length,
+                totalSize: totalSize
+            }));
+            
+            // Send files one by one
+            sendNextFile();
+        }
+
+        // Send next file in queue
+        function sendNextFile() {
+            if (state.fileQueue.length === 0) {
+                logMessage('All files sent successfully!', 'success');
+                return;
+            }
+            
+            const file = state.fileQueue.shift();
+            const reader = new FileReader();
+            
+            // Send file header
+            state.peer.send(JSON.stringify({
+                type: 'file-header',
+                name: file.name,
+                size: file.size,
+                type: file.type
+            }));
+            
+            // Read file as ArrayBuffer
+            reader.onload = function(e) {
+                state.peer.send(e.target.result);
+                
+                // Update progress
+                const sentBytes = totalSize - state.fileQueue.reduce((sum, f) => sum + f.size, file.size);
+                updateProgress(sentBytes, totalSize);
+                
+                // Send file end marker
+                state.peer.send(JSON.stringify({
+                    type: 'file-end'
+                }));
+                
+                // Send next file after a short delay
+                setTimeout(sendNextFile, 100);
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Handle incoming data
+        function handleIncomingData(data) {
+            // For simplicity, this is a placeholder
+            // In a real implementation, you would handle:
+            // - Metadata
+            // - File headers
+            // - File chunks
+            // - File end markers
+            
+            // Simulate receiving a file
+            if (state.receivedFiles.length === 0) {
+                const file = {
+                    name: 'example-image.jpg',
+                    size: 2457600,
+                    url: '#' // In real app, this would be a Blob URL
+                };
+                
+                state.receivedFiles.push(file);
+                updateDownloadsList();
+                logMessage('Received file: example-image.jpg', 'success');
+            }
+        }
+
+        // Update progress display
+        function updateProgress(bytesTransferred, totalBytes) {
+            const percent = Math.round((bytesTransferred / totalBytes) * 100);
+            elements.progressBar.value = percent;
+            elements.progressPercent.textContent = `${percent}%`;
+            
+            // Calculate speed
+            const now = Date.now();
+            if (now - state.lastUpdate > 1000) {
+                const elapsedSeconds = (now - state.lastUpdate) / 1000;
+                const bytesPerSecond = (bytesTransferred - state.lastBytes) / elapsedSeconds;
+                
+                elements.transferSpeed.textContent = `Speed: ${formatSpeed(bytesPerSecond)}`;
+                
+                state.lastBytes = bytesTransferred;
+                state.lastUpdate = now;
+            }
+        }
+
+        // Update downloads list
+        function updateDownloadsList() {
+            if (state.receivedFiles.length === 0) {
+                elements.downloadsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>Files you receive will appear here</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            elements.downloadsContainer.innerHTML = '';
+            
+            state.receivedFiles.forEach(file => {
+                const downloadItem = document.createElement('div');
+                downloadItem.className = 'download-item';
+                downloadItem.innerHTML = `
+                    <div class="download-icon">
+                        <i class="fas fa-file-download"></i>
+                    </div>
+                    <div>
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                    </div>
+                    <button class="download-btn">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                `;
+                
+                elements.downloadsContainer.appendChild(downloadItem);
+            });
+        }
+
+        // Reset transfer state
+        function resetTransfer() {
+            state.peer = null;
+            elements.progressContainer.style.display = 'none';
+            elements.sendBtn.disabled = !state.selectedDevice;
+        }
+
+        // Update connection status
+        function updateStatus(text, status) {
+            elements.statusText.textContent = text;
+            
+            // Remove all status classes
+            elements.statusIndicator.classList.remove(
+                'status-connected', 'status-disconnected', 'status-connecting'
+            );
+            
+            // Add current status class
+            elements.statusIndicator.classList.add(`status-${status}`);
+        }
+
+        // Log message to UI
+        function logMessage(message, type = 'info') {
+            const now = new Date();
+            const timeString = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type ? 'log-' + type : ''}`;
+            logEntry.textContent = `${timeString} ${message}`;
+            
+            elements.logsContainer.appendChild(logEntry);
+            elements.logsContainer.scrollTop = elements.logsContainer.scrollHeight;
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+            return (bytes / 1073741824).toFixed(1) + ' GB';
+        }
+
+        // Format transfer speed
+        function formatSpeed(bytesPerSecond) {
+            if (bytesPerSecond < 1024) return bytesPerSecond.toFixed(0) + ' B/s';
+            if (bytesPerSecond < 1048576) return (bytesPerSecond / 1024).toFixed(1) + ' KB/s';
+            return (bytesPerSecond / 1048576).toFixed(1) + ' MB/s';
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
